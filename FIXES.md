@@ -3,7 +3,7 @@
 ## Changes Made
 
 ### Containerization
-- **Added Dockerfile** — Multi-stage build for production deployment
+- **Added Dockerfile** — Single-stage build for the dashboard component
 - **Added docker-compose.yml** — Service orchestration with healthchecks
 - **Added .env.example** — Environment variable template with placeholder values
 - **Added requirements.txt** — Python dependencies

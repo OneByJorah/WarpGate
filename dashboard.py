@@ -33,6 +33,8 @@ def get_leases():
 def restrict_subnet():
     if request.method == "POST":
         client_ip = request.remote_addr
+        if client_ip in ("127.0.0.1", "::1"):
+            return None
         if not client_ip.startswith(AP_SUBNET.rsplit(".", 1)[0] + "."):
             return jsonify({"error": "Forbidden: not on AP subnet"}), 403
 

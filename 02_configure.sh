@@ -3,13 +3,14 @@
 # Pi Gateway - Configure: Dashboard + Telegram Bot + systemd
 # Run AFTER 01_install.sh and editing config.env
 # ============================================================
-set -e
+set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
 info() { echo -e "${CYAN}[INFO]${NC} $1"; }
 ok()   { echo -e "${GREEN}[OK]${NC} $1"; }
 die()  { echo -e "${RED}[ERR]${NC} $1"; exit 1; }
 
 [[ $EUID -ne 0 ]] && die "Run as root: sudo bash 02_configure.sh"
+[[ -f /etc/EdgeGateway/config.env ]] || die "/etc/EdgeGateway/config.env not found. Run 01_install.sh first."
 source /etc/EdgeGateway/config.env
 
 APP_DIR=/opt/EdgeGateway
@@ -178,7 +179,9 @@ def restrict_subnet():
     # Allow all GET requests; restrict POST to AP subnet only
     if request.method == "POST":
         client_ip = request.remote_addr
-        # Check if client is in AP subnet (simple prefix check for /24)
+        # Allow loopback (local admin) and AP subnet clients
+        if client_ip in ("127.0.0.1", "::1"):
+            return None
         if not client_ip.startswith(AP_SUBNET.rsplit(".", 1)[0] + "."):
             return jsonify({"error": "Forbidden: not on AP subnet"}), 403
 

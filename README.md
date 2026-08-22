@@ -23,12 +23,20 @@ Raspberry Pi Cloudflare WARP gateway
 ## Features
 
 - **Secure Tunneling** — Route all traffic through Cloudflare WARP.
-- **DNS Privacy** — Encrypted DNS resolution via Cloudflare.
-- **Outbound Proxy** — Transparent proxy for all network devices.
+- **DNS Privacy** — DNS resolution via Cloudflare (1.1.1.1 / 1.0.0.1).
+- **WiFi Access Point** — Internal hotspot with DHCP (hostapd + dnsmasq).
+- **Outbound Proxy** — Transparent NAT proxy for all network devices.
 - **Raspberry Pi** — Optimized for Pi 4/5.
 - **Zero Config** — Automatic WARP registration.
-- **Kill Switch** — Block traffic if WARP disconnects.
-- **Split Tunnel** — Choose which traffic goes through WARP.
+- **Dashboard** — Live status web UI with WebSocket updates.
+- **Telegram Bot** — Remote control: status, WARP toggle, service restarts.
+
+## Requirements
+
+- Raspberry Pi 4/5 (or any Debian-based host) with a wired WAN uplink (`eth0`) and a WiFi adapter (`wlan0`)
+- Root privileges — all setup scripts must run under `sudo`
+- The Cloudflare WARP client is installed automatically by the installer
+- Optional: a Telegram bot token + your chat ID for remote control
 
 ## Quick Start
 
@@ -38,9 +46,11 @@ Raspberry Pi Cloudflare WARP gateway
 git clone https://github.com/OneByJorah/WarpGate.git
 cd WarpGate
 
-sudo bash setup.sh
-sudo systemctl enable warpgate
-sudo systemctl start warpgate
+sudo bash 01_install.sh      # base system: packages, hostapd, dnsmasq, iptables, WARP
+# edit AP settings at the top of 01_install.sh before running,
+# or afterwards in /etc/EdgeGateway/config.env
+sudo bash 02_configure.sh    # dashboard, Telegram bot, systemd units
+sudo reboot
 ```
 
 ### Check Status
@@ -51,12 +61,21 @@ warp-cli status
 
 ## Configuration
 
+All settings live in `/etc/EdgeGateway/config.env` (written by the installer; see [.env.example](.env.example) for a template):
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `WARP_MODE` | `warp` | WARP mode (warp/warp+doh) |
-| `LISTEN_PORT` | `5000` | Dashboard port |
-| `SPLIT_TUNNEL` | `false` | Enable split tunneling |
-| `KILL_SWITCH` | `true` | Block traffic on disconnect |
+| `AP_IFACE` | `wlan0` | WiFi interface used as access point |
+| `WAN_IFACE` | `eth0` | Wired uplink interface |
+| `AP_SSID` | `PiGateway` | Hotspot network name |
+| `AP_PASS` | *(set in installer)* | Hotspot passphrase — change it |
+| `AP_COUNTRY` | `US` | Regulatory domain (2-letter code) |
+| `AP_IP` | `192.168.50.1` | Gateway IP on the AP subnet |
+| `AP_SUBNET` | `192.168.50.0/24` | AP subnet |
+| `WARP_MTU` | `1280` | WARP tunnel MTU |
+| `DASHBOARD_PORT` | `5000` | Dashboard web port |
+| `BOT_TOKEN` | *(empty)* | Telegram bot token (optional) |
+| `ADMIN_CHAT_ID` | *(empty)* | Telegram admin chat ID(s), comma-separated |
 
 ## Architecture
 
@@ -72,14 +91,14 @@ Devices ──Gateway──▶ WarpGate ──WARP──▶ Cloudflare ──▶
 
 ```
 WarpGate/
-├── setup.sh               # Pi setup script
-├── warpgate/
-│   ├── config.py          # Configuration
-│   ├── monitor.py         # WARP status monitor
-│   └── dashboard.py       # Web dashboard
-├── templates/             # HTML templates
-├── warpgate.service       # systemd service
-└── README.md
+├── 01_install.sh            # Base install: packages, AP, firewall, WARP client
+├── 02_configure.sh          # Dashboard + Telegram bot + systemd units
+├── dashboard.py             # Flask dashboard (deployed by 02_configure.sh)
+├── templates/               # Dashboard HTML
+│   └── dashboard.html
+├── Dockerfile               # Dashboard-only container build
+├── docker-compose.yml       # Dashboard container orchestration
+└── .env.example             # Config variable reference
 ```
 
 ## Contributing
@@ -88,23 +107,9 @@ Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 ## Security
 
-For security concerns, see [SECURITY.md](SECURITY.md). Please report vulnerabilities to **info@jorahone.com** — do not use public issues.
+For security concerns, see [SECURITY.md](SECURITY.md). Please report vulnerabilities to **security@jorahone.com** — do not use public issues.
 
 ## License
-
-MIT © Jhonattan L. Jimenez
-
----
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). All contributions follow the [Code of Conduct](CODE_OF_CONDUCT.md).
-
-## 🔒 Security
-
-Found a vulnerability? Please follow our [Security Policy](SECURITY.md) and report privately to `security@jorahone.com`.
-
-## 📄 License
 
 [MIT License](LICENSE) © Jhonattan L. Jimenez (OneByJorah)
 

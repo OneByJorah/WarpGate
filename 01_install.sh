@@ -5,7 +5,7 @@
 # wlan0 = WiFi Access Point (internal hotspot)
 # All traffic tunneled via Cloudflare WARP
 # ============================================================
-set -e
+set -euo pipefail
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 info()  { echo -e "${CYAN}[INFO]${NC} $1"; }
@@ -35,6 +35,7 @@ ADMIN_CHAT_ID=""        # Your Telegram chat ID
 
 # ── Persist config ────────────────────────────────────────
 mkdir -p /etc/EdgeGateway
+chmod 700 /etc/EdgeGateway
 cat > /etc/EdgeGateway/config.env <<EOF
 AP_IFACE=$AP_IFACE
 WAN_IFACE=$WAN_IFACE
@@ -51,6 +52,7 @@ DASHBOARD_PORT=$DASHBOARD_PORT
 BOT_TOKEN=$BOT_TOKEN
 ADMIN_CHAT_ID=$ADMIN_CHAT_ID
 EOF
+chmod 600 /etc/EdgeGateway/config.env
 ok "Config written to /etc/EdgeGateway/config.env"
 
 # ── System update ─────────────────────────────────────────
@@ -100,7 +102,7 @@ mkdir -p /opt/EdgeGateway/{templates,static}
 # ── Enable IP forwarding ──────────────────────────────────
 info "Enabling IP forwarding..."
 sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-sysctl -p /etc/sysctl.conf > /dev/null
+sysctl -w net.ipv4.ip_forward=1 > /dev/null
 ok "IP forwarding enabled"
 
 # ── Configure hostapd ─────────────────────────────────────
@@ -131,13 +133,15 @@ ok "hostapd configured"
 
 # ── Static IP for AP interface ────────────────────────────
 info "Setting static IP on $AP_IFACE..."
-cat >> /etc/dhcpcd.conf <<EOF
+if ! grep -q "^interface $AP_IFACE$" /etc/dhcpcd.conf; then
+    cat >> /etc/dhcpcd.conf <<EOF
 
 # Pi Gateway AP Interface
 interface $AP_IFACE
     static ip_address=$AP_IP/24
     nohook wpa_supplicant
 EOF
+fi
 ok "Static IP set: $AP_IP"
 
 # ── Configure dnsmasq ─────────────────────────────────────
