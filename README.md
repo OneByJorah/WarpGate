@@ -13,7 +13,7 @@ Raspberry Pi Cloudflare WARP gateway
 ---
 
 <p align="center">
-  <img src="docs/assets/screenshot.png" alt="WarpGate preview" width="90%">
+  <img src="docs/screenshots/dashboard.png" alt="WarpGate preview" width="90%">
 </p>
 
 <br>
@@ -46,11 +46,18 @@ Raspberry Pi Cloudflare WARP gateway
 git clone https://github.com/OneByJorah/WarpGate.git
 cd WarpGate
 
+# 1. Edit 01_install.sh to set your AP_SSID / AP_PASS / AP_IP
 sudo bash 01_install.sh      # base system: packages, hostapd, dnsmasq, iptables, WARP
-# edit AP settings at the top of 01_install.sh before running,
-# or afterwards in /etc/EdgeGateway/config.env
 sudo bash 02_configure.sh    # dashboard, Telegram bot, systemd units
 sudo reboot
+```
+
+### Dashboard Only (Docker)
+
+```bash
+cp .env.example .env
+# edit .env if needed, then:
+docker compose up -d
 ```
 
 ### Check Status
@@ -107,7 +114,7 @@ Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 ## Security
 
-For security concerns, see [SECURITY.md](SECURITY.md). Please report vulnerabilities to **security@jorahone.com** — do not use public issues.
+For security concerns, see [SECURITY.md](SECURITY.md). Please report vulnerabilities privately via GitHub Security Advisories — do not use public issues.
 
 ## License
 

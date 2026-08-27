@@ -128,6 +128,13 @@ socket.on('connect', () => {
   fetchLeases();
 });
 
+// Fallback: if SocketIO fails or loads slowly, poll REST endpoints on load
+window.addEventListener('DOMContentLoaded', () => {
+  fetchStats();
+  fetchLeases();
+  setInterval(fetchStats, 3000);
+});
+
 async function fetchStats() {
   try {
     const r = await fetch('/api/stats');
